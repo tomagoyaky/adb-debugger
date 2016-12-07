@@ -1,0 +1,1 @@
+adb shell am start -D -n "com.o4072de0d9e45e38add31daa7354fc697/com.tongmo.octopus.helper.biz.activity.SplashActivity"
