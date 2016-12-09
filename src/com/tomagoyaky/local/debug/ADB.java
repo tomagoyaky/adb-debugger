@@ -2,12 +2,10 @@ package com.tomagoyaky.local.debug;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.exec.ExecuteException;
 import org.w3c.dom.Document;
@@ -15,7 +13,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 public class ADB extends Executor {
 
@@ -27,15 +24,7 @@ public class ADB extends Executor {
 
 	public static ADB getInstance() {
 		if(adb == null){
-			try {
-				adb = new ADB(Configure.getItemValue("adb"));
-			} catch (ParserConfigurationException e) {
-				e.printStackTrace();
-			} catch (SAXException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			adb = new ADB(Configure.getItemValue("adb"));
 		}
 		return adb;
 	}
@@ -92,7 +81,7 @@ public class ADB extends Executor {
 	public String isXposedSupport() throws ExecuteException, IOException{
 		String app_process_retStr = adb.shell("app_process", System.getProperty("user.dir"), 0, 0).replace("\n", "");
 		if(app_process_retStr.toLowerCase().contains("with xposed support")){
-			String[] items = app_process_retStr.split("\r");
+			String[] items = app_process_retStr.split("\r");	// StringTokenizer
 			for (int i = 0; i < items.length; i++) {
 				String item = items[i];
 				if(item.toLowerCase().contains("with xposed support")){

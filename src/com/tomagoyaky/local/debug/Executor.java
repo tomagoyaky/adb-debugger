@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.xml.sax.SAXException;
 
 public class Executor extends Logger{
 
@@ -28,10 +31,12 @@ public class Executor extends Logger{
 	 * @throws IOException 
 	 * @throws ExecuteException 
 	 * @return boolean
+	 * @throws SAXException 
+	 * @throws ParserConfigurationException 
 	 * */
 	public static boolean execute(String cmdlineStr, String cwd, int exitValue, OutputStream os, int timeout) throws ExecuteException, IOException{
 		
-		logd("[CMD]" + cmdlineStr);
+		logd("[CMD]" + cmdlineStr.replace(Configure.getItemValue("dir_adb_path"), "{ADB_PATH}"));
 		CommandLine cmdLine = CommandLine.parse(cmdlineStr);
 		DefaultExecutor	executor = new DefaultExecutor();
 		PumpStreamHandler streamHandler = new PumpStreamHandler(os); 
@@ -45,9 +50,9 @@ public class Executor extends Logger{
 		return true;
 	}
 	
-	public static boolean execute(String cmdlineStr, String cwd, OutputStream os, int timeout){
+	public static boolean execute(String cmdlineStr, String cwd, OutputStream os, int timeout) throws IOException{
 
-//		log("[CMD]" + cmdlineStr);
+		logd("[CMD]" + cmdlineStr.replace(Configure.getItemValue("dir_adb_path"), "{ADB_PATH}"));
 		CommandLine cmdLine = CommandLine.parse(cmdlineStr);
 		DefaultExecutor	executor = new DefaultExecutor();
 		PumpStreamHandler streamHandler = new PumpStreamHandler(os); 
@@ -73,10 +78,12 @@ public class Executor extends Logger{
 	 * @throws IOException 
 	 * @throws ExecuteException 
 	 * @return String
+	 * @throws SAXException 
+	 * @throws ParserConfigurationException 
 	 * */
 	public static String execute(String cmdlineStr, String cwd, int exitValue, int timeout) throws ExecuteException, IOException{
-		
-//		log("[CMD]" + cmdlineStr);
+
+		logd("[CMD]" + cmdlineStr.replace(Configure.getItemValue("dir_adb_path"), "{ADB_PATH}"));
 		CommandLine cmdLine = CommandLine.parse(cmdlineStr);
 		DefaultExecutor	executor = new DefaultExecutor();
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

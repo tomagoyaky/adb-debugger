@@ -9,13 +9,20 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.exec.ExecuteException;
 import org.xml.sax.SAXException;
 
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.tomagoyaky.jdwp.Debugger;
+
 public class DebugEntry extends Executor {
 
 	private static ApkInfo apkInfo;
 	private static DeviceInfo deviceInfo;
 	private static ADB adb;
+	private static Debugger debugger;
 
 	private static String dir_remote = null;
+	private static final int LocalPort = 8195;
 	private static Thread androidServer = new Thread(new Runnable() {
 		
 		@Override
@@ -27,13 +34,10 @@ public class DebugEntry extends Executor {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			} catch (ParserConfigurationException e) {
-				e.printStackTrace();
-			} catch (SAXException e) {
-				e.printStackTrace();
 			}
 		}
 	});
+	
 	public static void main(String[] args) {
 		boolean islooprunning = false;
 		try{
@@ -42,6 +46,7 @@ public class DebugEntry extends Executor {
 			adb = ADB.getInstance();
 			deviceInfo = DeviceInfo.getInstance(adb).getDevice();
 			apkInfo = ApkInfo.getInstance(apkFilePath).parseApkFile();
+			debugger = Debugger.getInstance();
 
 			while(true){
 				if(islooprunning){
@@ -66,7 +71,7 @@ public class DebugEntry extends Executor {
 							adb.sushell("mkdir -p " + dir_remote, System.getProperty("user.dir"), 0, 0);
 							
 							apkInfo.printSimpleInfo();
-							adb.install(apkFilePath, true);
+//							adb.install(apkFilePath, true);
 							if(!adb.isDebuggable()){
 								logd("try to crack android system's prop's value with 'ro.debuggable'");
 								if(deviceInfo.abi.contains("armeabi") && deviceInfo.abi.contains("64")){
@@ -78,6 +83,9 @@ public class DebugEntry extends Executor {
 								adb.sushell(dir_remote + "/mprop ro.debuggable 1", System.getProperty("user.dir"), 0, 0);
 							}
 							adb.amStartActivityWithDebug(apkInfo);
+							
+							// waiting for process runing 
+							Thread.sleep(1000 * 2);
 							int pid = Runntime.getpid(adb, apkInfo.pkg);
 							logd("pid=" + pid);
 
@@ -113,7 +121,7 @@ public class DebugEntry extends Executor {
 //								IDAHook.getInstance(Configure.getItemValue("IDAinject")).waitForAttach(ida_pid);
 //							}
 							
-							readDataFromConsole(">>>> any key to continue, when your andriod application is attached successfully by IDA-pro");
+//							readDataFromConsole(">>>> any key to continue, when your andriod application is attached successfully by IDA-pro");
 							
 							// avoid the DDMS's affect, we remove all of the forward-port.
 							/**
@@ -123,9 +131,27 @@ public class DebugEntry extends Executor {
 							adb.forward_removeAll();
 							String jdwpStr = execute(Configure.getItemValue("adb") + " jdwp", System.getProperty("user.dir"), 0, 0);
 							if(jdwpStr.contains("" + pid)){
-								adb.forward(9600, pid, "jdwp");
-								execute("jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=" + 9600, 
-										System.getProperty("user.dir"), 0, System.out, 0);
+								adb.forward(LocalPort, pid, "jdwp");
+//								execute("jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=" + LocalPort, 
+//										System.getProperty("user.dir"), 0, System.out, 0);
+								try {
+									debugger.connect(LocalPort);
+									
+									logd("sleeping 3s for loading classes");
+									Thread.sleep(1000 * 3);
+									
+									debugger.printallThread();
+//									debugger.printClass("com.bradzhao.crackme.MainActivity");
+									debugger.setBreakPoint("org.apache.http.client.methods.HttpPost.<init>(Ljava/lang/String;)V");
+//									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
+//									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
+//									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
+									debugger.trace(false);
+									debugger.resume();
+									debugger.loop();
+								} catch (AbsentInformationException | IncompatibleThreadStateException | InterruptedException | ClassNotLoadedException e) {
+									loge(e);
+								}
 							}else{
 								loge("the application '" + apkInfo.pkg + "' has no jdwp port to open, Maybe you should startActivity with debug model.");
 							}
@@ -144,7 +170,7 @@ public class DebugEntry extends Executor {
 							System.exit(0);
 							break;
 						}
-					}catch (IOException e) {
+					}catch (IOException | InterruptedException e) {
 						loge(e);
 					}
 				}
@@ -189,6 +215,7 @@ public class DebugEntry extends Executor {
 		logd("| (1) display simple info about apk.");
 		logd("| (2) install apk.");
 		logd("| (3) 'am' command start activity with debug model.");
-		return readDataFromConsole("remote-device$ ");
+//		return readDataFromConsole("remote-device$ ");
+		return String.valueOf(0);
 	}
 }
