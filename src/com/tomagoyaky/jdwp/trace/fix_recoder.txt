@@ -1,0 +1,67 @@
+java.lang.UnsupportedOperationException
+	at com.sun.tools.jdi.JDWPException.toJDIException(JDWPException.java:38)
+	at com.sun.tools.jdi.TargetVM$EventController.run(TargetVM.java:350)
+
+
+VirtualMachineImpl.java 
+VirtualMachineImpl target = new TargetVM(this, connection);
+
+src/share/classes/com/sun/tools/jdi/EventSetImpl.java 
+EventSetImpl(VirtualMachine aVm, Packet pkt) {
+    super();
+
+    // From "MirrorImpl":
+    // Yes, its a bit of a hack. But by doing it this
+    // way, this is the only place we have to change
+    // typing to substitute a new impl.
+    vm = (VirtualMachineImpl)aVm;
+
+    this.pkt = pkt;
+}
+
+
+
+src/share/classes/com/sun/tools/jdi/EventQueueImpl.java 
+synchronized void close() {
+    if (!closed) {
+        closed = true; // OK for this the be first since synchronized
+
+        // place VMDisconnectEvent into queue
+        enqueue(new EventSetImpl(vm, (byte)JDWP.EventKind.VM_DISCONNECTED));
+    }
+}
+synchronized void enqueue(EventSet eventSet) {
+    eventSets.add(eventSet);
+    notifyAll();
+}
+
+public EventSet remove(long timeout) throws InterruptedException {
+    if (timeout < 0) {
+        throw new IllegalArgumentException("Timeout cannot be negative");
+    }
+
+    EventSet eventSet;
+    while (true) {
+        EventSetImpl fullEventSet = removeUnfiltered(timeout);
+        if (fullEventSet == null) {
+            eventSet = null;  // timeout
+            break;
+        }
+        /*
+         * Remove events from the event set for which
+         * there is no corresponding enabled request (
+         * this includes our internally requested events.)
+         * This never returns null
+         */
+        eventSet = fullEventSet.userFilter();
+        if (!eventSet.isEmpty()) {
+            break;
+        }
+    }
+
+    if ((eventSet != null) && (eventSet.suspendPolicy() == JDWP.SuspendPolicy.ALL)) {
+        vm.notifySuspend();
+    }
+
+    return eventSet;
+}

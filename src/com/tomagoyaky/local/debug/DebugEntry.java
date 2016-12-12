@@ -142,14 +142,13 @@ public class DebugEntry extends Executor {
 									
 									debugger.printallThread();
 //									debugger.printClass("com.bradzhao.crackme.MainActivity");
-									debugger.setBreakPoint("org.apache.http.client.methods.HttpPost.<init>(Ljava/lang/String;)V");
+//									debugger.setBreakPoint("org.apache.http.client.methods.HttpPost.<init>(Ljava/lang/String;)V");
 //									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
 //									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
 //									debugger.setBreakPoint("com.bradzhao.crackme.MainActivity.check(Ljava/lang/String;)V");
-									debugger.trace(false);
+									debugger.trace.generateTrace();
 									debugger.resume();
-									debugger.loop();
-								} catch (AbsentInformationException | IncompatibleThreadStateException | InterruptedException | ClassNotLoadedException e) {
+								} catch (AbsentInformationException | IncompatibleThreadStateException | InterruptedException e) {
 									loge(e);
 								}
 							}else{
